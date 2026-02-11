@@ -33,5 +33,7 @@ export async function GET(request: NextRequest) {
       .orderBy(members.name);
   }
 
-  return NextResponse.json({ members: result });
+  return NextResponse.json({ members: result }, {
+    headers: { "Cache-Control": "no-store" },
+  });
 }

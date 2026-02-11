@@ -17,8 +17,9 @@ export default async function MemberLayout({
           <div className="flex h-14 items-center justify-between">
             <Link
               href="/book"
-              className="text-lg font-semibold text-stone-900"
+              className="flex items-center gap-2 text-lg font-semibold text-stone-900"
             >
+              <img src="/logo.png" alt="" className="h-8 w-auto" />
               {APP_NAME}
             </Link>
             <div className="flex items-center gap-2">

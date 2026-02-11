@@ -19,8 +19,9 @@ export default async function AdminLayout({
             <div className="flex items-center gap-8">
               <Link
                 href="/admin"
-                className="text-lg font-semibold text-stone-900"
+                className="flex items-center gap-2 text-lg font-semibold text-stone-900"
               >
+                <img src="/logo.png" alt="" className="h-8 w-auto" />
                 {APP_NAME} Admin
               </Link>
               <div className="hidden sm:flex sm:items-center sm:gap-1">

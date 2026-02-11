@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { bookings, members, events } from "@/db/schema";
+import { bookings, members, events, waitlist } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { requireAdminApi } from "@/lib/auth";
 
@@ -31,7 +31,20 @@ export async function GET(
     .innerJoin(members, eq(bookings.memberId, members.id))
     .where(eq(bookings.eventId, Number(eventId)));
 
-  return NextResponse.json(guests);
+  const waitlistEntries = await db
+    .select({
+      waitlistId: waitlist.id,
+      memberId: members.id,
+      name: members.name,
+      studentId: members.studentId,
+      gender: members.gender,
+      createdAt: waitlist.createdAt,
+    })
+    .from(waitlist)
+    .innerJoin(members, eq(waitlist.memberId, members.id))
+    .where(and(eq(waitlist.eventId, Number(eventId)), eq(waitlist.claimed, false)));
+
+  return NextResponse.json({ guests, waitlist: waitlistEntries });
 }
 
 // POST: Add a member to the event (VIP override - bypasses capacity)

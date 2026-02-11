@@ -83,7 +83,8 @@ export default function BookPage() {
       }
 
       const eventsData = await eventsRes.json();
-      setEvents(eventsData.filter((e: Event) => e.isOpen));
+      const today = new Date().toISOString().split("T")[0];
+      setEvents(eventsData.filter((e: Event) => e.isOpen && e.date >= today));
 
       if (bookingsRes.ok) {
         const bookingsData = await bookingsRes.json();

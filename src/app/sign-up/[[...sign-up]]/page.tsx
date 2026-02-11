@@ -158,6 +158,7 @@ export default function SignUpPage() {
         <div className="w-full max-w-md">
           <div className="rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
             <div className="mb-8 text-center">
+              <img src="/logo.png" alt="Royal Holloway ISOC" className="mx-auto h-20 w-auto mb-3" />
               <h1 className="text-2xl font-bold tracking-tight text-stone-900">
                 Verify your email
               </h1>
@@ -211,6 +212,7 @@ export default function SignUpPage() {
       <div className="w-full max-w-md">
         <div className="rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
           <div className="mb-8 text-center">
+            <img src="/logo.png" alt="Royal Holloway ISOC" className="mx-auto h-20 w-auto mb-3" />
             <h1 className="text-2xl font-bold tracking-tight text-stone-900">
               {APP_NAME}
             </h1>

@@ -24,7 +24,7 @@ export default function MembersPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showBlacklistedOnly, setShowBlacklistedOnly] = useState(false);
-  const [unbanLoading, setUnbanLoading] = useState<number | null>(null);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -44,25 +44,24 @@ export default function MembersPage() {
     setLoading(false);
   }
 
-  async function handleUnban(memberId: number) {
-    if (!confirm("Are you sure you want to unban this member? This will reset their strikes to 0.")) {
+  async function handleAction(memberId: number, action: string, confirmMessage: string) {
+    if (!confirm(confirmMessage)) {
       return;
     }
 
-    setUnbanLoading(memberId);
+    setActionLoading(memberId);
     try {
       const res = await fetch(`/api/members/${memberId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "unban" }),
+        body: JSON.stringify({ action }),
       });
 
       if (res.ok) {
-        // Refresh the members list
         fetchMembers(search);
       }
     } finally {
-      setUnbanLoading(null);
+      setActionLoading(null);
     }
   }
 
@@ -179,14 +178,31 @@ export default function MembersPage() {
                       )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
-                      {member.isBlacklisted && (
+                      {member.isBlacklisted ? (
                         <button
-                          onClick={() => handleUnban(member.id)}
-                          disabled={unbanLoading === member.id}
+                          onClick={() => handleAction(member.id, "unban", "Are you sure you want to unban this member? This will reset their strikes to 0.")}
+                          disabled={actionLoading === member.id}
                           className="rounded-lg bg-green-100 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-200 transition-colors disabled:opacity-50"
                         >
-                          {unbanLoading === member.id ? "Unbanning..." : "Unban"}
+                          {actionLoading === member.id ? "..." : "Unban"}
                         </button>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleAction(member.id, "add-strike", `This will add a strike to ${member.name}. At 3 strikes the member will be automatically blacklisted.`)}
+                            disabled={actionLoading === member.id}
+                            className="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-200 transition-colors disabled:opacity-50"
+                          >
+                            {actionLoading === member.id ? "..." : "Add Strike"}
+                          </button>
+                          <button
+                            onClick={() => handleAction(member.id, "blacklist", `Are you sure you want to blacklist ${member.name}? They will be banned from booking any events.`)}
+                            disabled={actionLoading === member.id}
+                            className="rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50"
+                          >
+                            {actionLoading === member.id ? "..." : "Blacklist"}
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>

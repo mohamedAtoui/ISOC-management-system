@@ -25,6 +25,15 @@ interface Event {
   foodOptions: string | null;
 }
 
+interface WaitlistEntry {
+  waitlistId: number;
+  memberId: number;
+  name: string;
+  studentId: string;
+  gender: string;
+  createdAt: string;
+}
+
 interface SearchResult {
   id: number;
   name: string;
@@ -39,6 +48,7 @@ export default function EventGuestListPage({
   const { eventId } = use(params);
   const [event, setEvent] = useState<Event | null>(null);
   const [guests, setGuests] = useState<Guest[]>([]);
+  const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   // VIP Add Guest state
@@ -54,7 +64,9 @@ export default function EventGuestListPage({
       fetch(`/api/events/${eventId}/guests`),
     ]);
     setEvent(await eventRes.json());
-    setGuests(await guestsRes.json());
+    const guestsData = await guestsRes.json();
+    setGuests(guestsData.guests);
+    setWaitlistEntries(guestsData.waitlist || []);
     setLoading(false);
   }, [eventId]);
 
@@ -137,6 +149,11 @@ export default function EventGuestListPage({
           <span className="text-green-600">
             {checkedInCount} checked in
           </span>
+          {waitlistEntries.length > 0 && (
+            <span className="text-amber-600">
+              {waitlistEntries.length} on waitlist
+            </span>
+          )}
         </div>
         {event.foodOptions && (
           <div className="mt-3">
@@ -247,6 +264,39 @@ export default function EventGuestListPage({
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Waitlist Section */}
+      {waitlistEntries.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-stone-900 mb-3">
+            Waitlist ({waitlistEntries.length})
+          </h2>
+          <div className="overflow-x-auto bg-white rounded-lg border border-stone-200">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-stone-200 bg-stone-50">
+                  <th className="py-3 px-4 text-sm font-medium text-stone-500">Name</th>
+                  <th className="py-3 px-4 text-sm font-medium text-stone-500">Student ID</th>
+                  <th className="py-3 px-4 text-sm font-medium text-stone-500">Gender</th>
+                  <th className="py-3 px-4 text-sm font-medium text-stone-500">Joined Waitlist</th>
+                </tr>
+              </thead>
+              <tbody>
+                {waitlistEntries.map((entry) => (
+                  <tr key={entry.waitlistId} className="border-b border-stone-100 hover:bg-stone-50">
+                    <td className="py-3 px-4 font-medium text-stone-900">{entry.name}</td>
+                    <td className="py-3 px-4 font-mono text-sm text-stone-600">{entry.studentId}</td>
+                    <td className="py-3 px-4 capitalize text-stone-600">{entry.gender}</td>
+                    <td className="py-3 px-4 text-sm text-stone-600">
+                      {new Date(entry.createdAt).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

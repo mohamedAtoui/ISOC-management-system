@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/auth";
 import { eq, and, sql, gte, asc } from "drizzle-orm";
 import { sendEmail } from "@/lib/email";
 import WaitlistPromotedEmail from "@/emails/waitlist-promoted";
+import WaitlistJoinedEmail from "@/emails/waitlist-joined";
 
 export async function GET() {
   const { member } = await requireSession();
@@ -184,6 +185,16 @@ export async function POST(req: NextRequest) {
         memberId: member.id,
         eventId: Number(eventId),
       });
+
+    // Send waitlist confirmation email (fire-and-forget)
+    const [waitlistEvent] = await db.select().from(events).where(eq(events.id, Number(eventId))).limit(1);
+    if (member.email && waitlistEvent) {
+      sendEmail({
+        to: member.email,
+        subject: `Waitlisted for ${waitlistEvent.name}`,
+        react: WaitlistJoinedEmail({ name: member.name, eventName: waitlistEvent.name, eventDate: waitlistEvent.date }),
+      }).catch(console.error);
+    }
 
     return NextResponse.json({
       status: "waitlisted",
