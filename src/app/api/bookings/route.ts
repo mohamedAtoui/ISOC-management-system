@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { events, bookings, waitlist, members, isMemberEligible } from "@/db/schema";
 import { requireSession } from "@/lib/auth";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, gte, asc } from "drizzle-orm";
 import { sendEmail } from "@/lib/email";
 import WaitlistPromotedEmail from "@/emails/waitlist-promoted";
 
@@ -41,6 +41,20 @@ export async function GET() {
       )
     );
 
+  // Compute which specific events are blocked by the penalty
+  const penaltyCount = member.penaltyUntilEventCount ?? 0;
+  let blockedEventIds: number[] = [];
+  if (penaltyCount > 0) {
+    const today = new Date().toISOString().split("T")[0];
+    const blockedEvents = await db
+      .select({ id: events.id })
+      .from(events)
+      .where(gte(events.date, today))
+      .orderBy(asc(events.date))
+      .limit(penaltyCount);
+    blockedEventIds = blockedEvents.map((e) => e.id);
+  }
+
   return NextResponse.json({
     bookings: memberBookings,
     waitlist: memberWaitlist,
@@ -48,7 +62,8 @@ export async function GET() {
       membershipExpires: member.membershipExpires,
       isBlacklisted: member.isBlacklisted,
       strikes: member.strikes,
-      penaltyUntilEventCount: member.penaltyUntilEventCount ?? 0,
+      penaltyUntilEventCount: penaltyCount,
+      blockedEventIds,
       isEligible: isMemberEligible(member.membershipExpires) && !member.isBlacklisted,
     },
   }, {
@@ -78,13 +93,24 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Check for late cancellation penalty
-  const penaltyCount = member.penaltyUntilEventCount ?? 0;
-  if (penaltyCount > 0) {
-    return NextResponse.json(
-      { error: `You are blocked from booking due to late cancellation. ${penaltyCount} event${penaltyCount !== 1 ? "s" : ""} remaining.` },
-      { status: 403 }
-    );
+  // Check for late cancellation penalty on this specific event
+  const postPenaltyCount = member.penaltyUntilEventCount ?? 0;
+  if (postPenaltyCount > 0) {
+    const today = new Date().toISOString().split("T")[0];
+    const blockedEvents = await db
+      .select({ id: events.id })
+      .from(events)
+      .where(gte(events.date, today))
+      .orderBy(asc(events.date))
+      .limit(postPenaltyCount);
+    const blockedIds = blockedEvents.map((e) => e.id);
+
+    if (blockedIds.includes(Number(eventId))) {
+      return NextResponse.json(
+        { error: `You are blocked from booking this event due to a late cancellation penalty. ${postPenaltyCount} event${postPenaltyCount !== 1 ? "s" : ""} remaining.` },
+        { status: 403 }
+      );
+    }
   }
 
   // Check for existing confirmed booking

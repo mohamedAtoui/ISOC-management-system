@@ -33,6 +33,7 @@ interface MemberStatus {
   isBlacklisted: boolean;
   strikes: number;
   penaltyUntilEventCount: number;
+  blockedEventIds: number[];
   isEligible: boolean;
 }
 
@@ -193,8 +194,9 @@ export default function BookPage() {
 
   const confirmedBookings = myBookings.filter((b) => b.status === "confirmed");
 
-  // Check if user can book (eligible, not blacklisted, not penalized)
-  const canBook = (memberStatus?.isEligible ?? false) && (memberStatus?.penaltyUntilEventCount ?? 0) === 0;
+  // Check if user can book (eligible, not blacklisted)
+  const canBook = memberStatus?.isEligible ?? false;
+  const blockedEventIds = memberStatus?.blockedEventIds ?? [];
 
   return (
     <>
@@ -318,6 +320,7 @@ export default function BookPage() {
             const existingBooking = getBookingForEvent(event.id);
             const existingWaitlist = getWaitlistForEvent(event.id);
             const isLoading = actionLoading[event.id] === "booking";
+            const isBlockedByPenalty = blockedEventIds.includes(event.id);
 
             return (
               <div
@@ -358,14 +361,14 @@ export default function BookPage() {
                       <span className="px-4 py-2 bg-amber-50 text-amber-700 rounded-lg font-medium text-sm">
                         Waitlisted
                       </span>
-                    ) : !canBook ? (
+                    ) : !canBook || isBlockedByPenalty ? (
                       <button
                         disabled
                         className="px-6 py-2 rounded-lg font-medium bg-stone-200 text-stone-500 cursor-not-allowed"
                         title={
                           memberStatus?.isBlacklisted
                             ? "Account suspended"
-                            : memberStatus?.penaltyUntilEventCount
+                            : isBlockedByPenalty
                             ? "Late cancellation penalty"
                             : "Membership expired"
                         }
