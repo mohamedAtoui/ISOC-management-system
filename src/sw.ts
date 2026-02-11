@@ -15,7 +15,12 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  runtimeCaching: defaultCache.filter((entry) => {
+    const m = entry.matcher;
+    if (m instanceof RegExp) return !m.test("/api/test");
+    if (typeof m === "string") return !m.includes("/api/");
+    return true;
+  }),
 });
 
 serwist.addEventListeners();

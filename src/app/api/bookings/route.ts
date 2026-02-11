@@ -48,9 +48,11 @@ export async function GET() {
       membershipExpires: member.membershipExpires,
       isBlacklisted: member.isBlacklisted,
       strikes: member.strikes,
-      penaltyUntilEventCount: (member as { penaltyUntilEventCount?: number }).penaltyUntilEventCount ?? 0,
+      penaltyUntilEventCount: member.penaltyUntilEventCount ?? 0,
       isEligible: isMemberEligible(member.membershipExpires) && !member.isBlacklisted,
     },
+  }, {
+    headers: { "Cache-Control": "no-store" },
   });
 }
 
@@ -77,7 +79,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Check for late cancellation penalty
-  const penaltyCount = (member as { penaltyUntilEventCount?: number }).penaltyUntilEventCount ?? 0;
+  const penaltyCount = member.penaltyUntilEventCount ?? 0;
   if (penaltyCount > 0) {
     return NextResponse.json(
       { error: `You are blocked from booking due to late cancellation. ${penaltyCount} event${penaltyCount !== 1 ? "s" : ""} remaining.` },
